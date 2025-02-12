@@ -1,71 +1,62 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
+import config
 import os
-import datetime
-import json
-import sys
-from typing import Set
+import itertools
 
-print("Python version:", sys.version)
+# Enable necessary intents
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix=config.get_prefix, help_command=None, intents=intents)
 
+async def load_extensions():
+    """Dynamically loads all cogs from subdirectories and prints folder names only."""
+    for folder in os.listdir("cogs"):
+        folder_path = os.path.join("cogs", folder)
+        if os.path.isdir(folder_path):
+            print(f"✅ Loaded {folder}")  # Show only the folder name in console
+            for file in os.listdir(folder_path):
+                if file.endswith(".py") and file != "__init__.py":
+                    try:
+                        await bot.load_extension(f"cogs.{folder}.{file[:-3]}")
+                    except Exception:
+                        pass  # Suppress individual file loading output
 
-def load_data():
+@bot.event
+async def setup_hook():
+    """Executed before the bot starts running, used to load cogs and sync commands."""
+    await load_extensions()
     try:
-        with open("data.json", "r") as f:
-            data = f.read()
-            return json.loads(data) if data.strip() else {
-                "prefixes": {},
-                "no_prefix_users": []
-            }
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"prefixes": {}, "no_prefix_users": []}
+        synced = await bot.tree.sync()
+        print(f"✅ Synced {len(synced)} slash commands.")
+    except Exception as e:
+        print(f"❌ Failed to sync slash commands: {e}")
 
+# Define bot status cycle with correct lambda execution
+def get_status():
+    return itertools.cycle([
+        discord.Game(name=f"Moderating {len(bot.guilds)} servers"),
+        discord.Activity(type=discord.ActivityType.listening, name=f"{sum(g.member_count for g in bot.guilds)} users"),
+        discord.Streaming(name="Faster than Light", url="https://www.twitch.tv/discord")  # Dummy URL required
+    ])
 
-def save_data(data):
-    with open("data.json", "w") as f:
-        json.dump(data, f, indent=4)
+status_cycle = get_status()
 
+@tasks.loop(seconds=30)
+async def change_status():
+    """Cycles through different bot statuses."""
+    status = next(status_cycle)
+    await bot.change_presence(
+        activity=status,
+        status=discord.Status.online if isinstance(status, discord.Game)
+        else discord.Status.dnd if isinstance(status, discord.Activity)
+        else discord.Status.idle
+    )
 
-def get_prefix(bot, message):
-    data = load_data()
-    return data["prefixes"].get(str(message.guild.id), "?")
+@bot.event
+async def on_ready():
+    """Executed when the bot is fully ready."""
+    print(f"✅ Logged in as {bot.user}")
+    if not change_status.is_running():
+        change_status.start()
 
-
-class Bot(commands.Bot):
-
-    def __init__(self):
-        intents = discord.Intents.default()
-        intents.message_content = True
-        super().__init__(command_prefix=self.dynamic_prefix, intents=intents)
-        self.no_prefix_users = set(load_data().get("no_prefix_users", []))
-        self.launch_time = datetime.datetime.utcnow()
-        self.owner_ids = {1326586828739838003, 883997337863749652}
-
-    async def dynamic_prefix(self, bot, message):
-        if message.author.id in self.no_prefix_users:
-            return ""
-        return get_prefix(bot, message)
-
-    async def on_ready(self):
-        print(f'Logged in as {self.user} (ID: {self.user.id})')
-        print('------')
-
-    async def setup_hook(self):
-
-        try:
-            await self.load_extension("jishaku")
-            print("Jishaku Loaded")
-        except Exception as e:
-            print(f"Failed to load Jishaku: {e}")
-
-        for filename in os.listdir("./cogs/commands"):
-            if filename.endswith('.py'):
-                try:
-                    await self.load_extension(f'cogs.commands.{filename[:-3]}')
-                    print(f'Loaded Cog: `{filename[:-3]}`')
-                except Exception as e:
-                    print(f"Failed to load Cog {filename}: {e}")
-
-
-bot = Bot()
-bot.run(os.environ['TOKEN'])
+bot.run(config.TOKEN)
