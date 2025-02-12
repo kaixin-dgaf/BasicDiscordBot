@@ -1,1 +1,1 @@
-soon
+TOKEN = "enter_ur_bot_token"
