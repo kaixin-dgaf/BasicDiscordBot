@@ -39,11 +39,11 @@ EARLY_SUPPORT_ROLE_ID = 0
 PREMIUM_USER_ROLE_ID = 0  
 
 MANUAL_WEBHOOKS = {
-    "server_join": "https://discord.com/api/webhooks/1413206141839736945/-iPEv9TtpuAw0SXB3VGw2NAC9ziWbE-oOwzpyOVGkCWTjWXTmrQIvrUvr8WzkvhZ6DQB",
-    "server_leave": "https://discord.com/api/webhooks/1413206409864151060/ww4sWHKGp0UgPhUSzJBpncmCYgi9VcTBMPJa-Gu3sNfg1e-kupjTTHNLcUyMTEfe21Ia",
-    "command_executed": "https://discord.com/api/webhooks/1413206673723756614/e6y13tAenv7XvIgjGO5y-Xf8GK6Caxp4vkVegvhZ0wryg-ROkdjlIIKlb_EUg13u8Ddc",
-    "error": "https://discord.com/api/webhooks/1413206472036323428/cvfo2nlQhQLF7XZb2RYzO2WcPXn_HIsgqgLa3P5Y8WggCJbkfdnolmoWWWDPbz7InEV4",
-    "ratelimit": "https://discord.com/api/webhooks/1413206535047217222/5e2sYGptby_KntZVrU7wehZG2dooUqOK4biYi0eT01_62ekSnJR7Bvim3xNOMSG0-P7p"
+    "server_join": "",
+    "server_leave": "",
+    "command_executed": "",
+    "error": "",
+    "ratelimit": ""
 }
 
 DIRECT_MESSAGE_CHANNELS = {
